@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Layout } from '@/components/Layout';
-import { Play, Clock, Captions, Hand } from 'lucide-react';
+import { Play, Clock, Captions, Hand, X, Pause } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
 
 const videos = [
   {
@@ -13,6 +14,7 @@ const videos = [
     hasSubtitles: true,
     hasLibras: true,
     thumbnail: '🔥',
+    videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ', // Placeholder
   },
   {
     id: 2,
@@ -23,6 +25,7 @@ const videos = [
     hasSubtitles: true,
     hasLibras: true,
     thumbnail: '💪',
+    videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
   },
   {
     id: 3,
@@ -33,6 +36,7 @@ const videos = [
     hasSubtitles: true,
     hasLibras: true,
     thumbnail: '🧘',
+    videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
   },
   {
     id: 4,
@@ -43,6 +47,7 @@ const videos = [
     hasSubtitles: true,
     hasLibras: true,
     thumbnail: '🏃',
+    videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
   },
   {
     id: 5,
@@ -53,6 +58,7 @@ const videos = [
     hasSubtitles: true,
     hasLibras: true,
     thumbnail: '💃',
+    videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
   },
   {
     id: 6,
@@ -63,10 +69,28 @@ const videos = [
     hasSubtitles: true,
     hasLibras: true,
     thumbnail: '🌿',
+    videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
   },
 ];
 
 const Videos = () => {
+  const [activeVideo, setActiveVideo] = useState<number | null>(null);
+  const { toast } = useToast();
+
+  const playVideo = (videoId: number) => {
+    setActiveVideo(videoId);
+    toast({
+      title: 'Reproduzindo vídeo',
+      description: 'Ative as legendas usando o botão CC no player.',
+    });
+  };
+
+  const closeVideo = () => {
+    setActiveVideo(null);
+  };
+
+  const activeVideoData = videos.find(v => v.id === activeVideo);
+
   return (
     <Layout>
       <div className="section-container">
@@ -78,6 +102,53 @@ const Videos = () => {
             em Libras, garantindo acesso completo ao conteúdo.
           </p>
         </header>
+
+        {/* Modal de vídeo */}
+        {activeVideo && activeVideoData && (
+          <div 
+            className="fixed inset-0 z-50 bg-foreground/80 flex items-center justify-center p-4"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="video-modal-title"
+          >
+            <div className="bg-background rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
+              <div className="flex items-center justify-between p-4 border-b border-border">
+                <h2 id="video-modal-title" className="font-display font-bold text-foreground">
+                  {activeVideoData.title}
+                </h2>
+                <Button variant="ghost" size="icon" onClick={closeVideo} aria-label="Fechar vídeo">
+                  <X className="w-5 h-5" />
+                </Button>
+              </div>
+              <div className="aspect-video bg-muted">
+                <iframe
+                  src={`${activeVideoData.videoUrl}?cc_load_policy=1&cc_lang_pref=pt`}
+                  title={activeVideoData.title}
+                  className="w-full h-full"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                />
+              </div>
+              <div className="p-4">
+                <p className="text-muted-foreground">{activeVideoData.description}</p>
+                <div className="flex gap-2 mt-4">
+                  {activeVideoData.hasSubtitles && (
+                    <span className="inline-flex items-center gap-1 bg-primary/10 text-primary text-xs font-medium px-2 py-1 rounded-full">
+                      <Captions className="w-3 h-3" aria-hidden="true" />
+                      Legendas disponíveis
+                    </span>
+                  )}
+                  {activeVideoData.hasLibras && (
+                    <span className="inline-flex items-center gap-1 bg-secondary/10 text-secondary text-xs font-medium px-2 py-1 rounded-full">
+                      <Hand className="w-3 h-3" aria-hidden="true" />
+                      Libras disponível
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Informação de acessibilidade */}
         <div className="bg-primary/5 border-2 border-primary/20 rounded-2xl p-6 mb-12">
@@ -165,7 +236,7 @@ const Videos = () => {
                 {video.description}
               </p>
 
-              <Button className="w-full mt-auto">
+              <Button className="w-full mt-auto" onClick={() => playVideo(video.id)}>
                 <Play className="w-4 h-4 mr-2" aria-hidden="true" />
                 Assistir Vídeo
               </Button>

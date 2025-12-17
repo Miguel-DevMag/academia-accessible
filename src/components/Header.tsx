@@ -1,7 +1,15 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Menu, X, Dumbbell } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Menu, X, Dumbbell, User, LogOut, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useAuth } from '@/contexts/AuthContext';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 const navigationLinks = [
   { name: 'Início', href: '/' },
@@ -14,6 +22,13 @@ const navigationLinks = [
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { user, profile, isAdmin, signOut } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    await signOut();
+    navigate('/');
+  };
 
   return (
     <header 
@@ -53,14 +68,70 @@ export function Header() {
             ))}
           </div>
 
-          {/* CTA Button */}
-          <div className="hidden md:block">
-            <Button 
-              asChild
-              className="bg-gradient-accent hover:opacity-90 text-accent-foreground font-semibold px-6"
-            >
-              <Link to="/contato">Matricule-se</Link>
-            </Button>
+          {/* User Menu / Login */}
+          <div className="hidden md:flex items-center gap-3">
+            {user ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    className="flex items-center gap-2 p-1 rounded-full hover:bg-muted transition-colors focus-visible:ring-2 focus-visible:ring-primary"
+                    aria-label="Menu do usuário"
+                  >
+                    <div className="w-10 h-10 rounded-full bg-muted overflow-hidden border-2 border-primary/20">
+                      {profile?.avatar_url ? (
+                        <img
+                          src={profile.avatar_url}
+                          alt="Foto de perfil"
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <User className="w-5 h-5 text-muted-foreground" />
+                        </div>
+                      )}
+                    </div>
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  <div className="px-2 py-1.5">
+                    <p className="font-medium text-sm text-foreground truncate">
+                      {profile?.full_name || 'Usuário'}
+                    </p>
+                    <p className="text-xs text-muted-foreground truncate">
+                      {user.email}
+                    </p>
+                  </div>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => navigate('/perfil')}>
+                    <User className="w-4 h-4 mr-2" />
+                    Meu Perfil
+                  </DropdownMenuItem>
+                  {isAdmin && (
+                    <DropdownMenuItem onClick={() => navigate('/admin')}>
+                      <Shield className="w-4 h-4 mr-2" />
+                      Painel Admin
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleLogout}>
+                    <LogOut className="w-4 h-4 mr-2" />
+                    Sair
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <>
+                <Button variant="ghost" asChild>
+                  <Link to="/auth">Entrar</Link>
+                </Button>
+                <Button 
+                  asChild
+                  className="bg-gradient-accent hover:opacity-90 text-accent-foreground font-semibold px-6"
+                >
+                  <Link to="/auth">Matricule-se</Link>
+                </Button>
+              </>
+            )}
           </div>
 
           {/* Mobile menu button */}
@@ -98,14 +169,48 @@ export function Header() {
                   {link.name}
                 </Link>
               ))}
-              <Button 
-                asChild
-                className="mt-4 bg-gradient-accent hover:opacity-90 text-accent-foreground font-semibold"
-              >
-                <Link to="/contato" onClick={() => setMobileMenuOpen(false)}>
-                  Matricule-se
-                </Link>
-              </Button>
+              
+              {user ? (
+                <>
+                  <Link
+                    to="/perfil"
+                    className="px-4 py-3 text-foreground hover:bg-muted rounded-lg transition-colors font-medium text-lg flex items-center gap-2"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <User className="w-5 h-5" />
+                    Meu Perfil
+                  </Link>
+                  {isAdmin && (
+                    <Link
+                      to="/admin"
+                      className="px-4 py-3 text-foreground hover:bg-muted rounded-lg transition-colors font-medium text-lg flex items-center gap-2"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      <Shield className="w-5 h-5" />
+                      Painel Admin
+                    </Link>
+                  )}
+                  <button
+                    onClick={() => {
+                      handleLogout();
+                      setMobileMenuOpen(false);
+                    }}
+                    className="px-4 py-3 text-foreground hover:bg-muted rounded-lg transition-colors font-medium text-lg flex items-center gap-2 w-full text-left"
+                  >
+                    <LogOut className="w-5 h-5" />
+                    Sair
+                  </button>
+                </>
+              ) : (
+                <Button 
+                  asChild
+                  className="mt-4 bg-gradient-accent hover:opacity-90 text-accent-foreground font-semibold"
+                >
+                  <Link to="/auth" onClick={() => setMobileMenuOpen(false)}>
+                    Entrar / Matricule-se
+                  </Link>
+                </Button>
+              )}
             </div>
           </div>
         )}

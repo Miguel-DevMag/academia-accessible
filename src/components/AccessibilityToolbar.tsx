@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAccessibility } from '@/contexts/AccessibilityContext';
+import { useTextToSpeech } from '@/hooks/useTextToSpeech';
 import { 
   Plus, 
   Minus, 
@@ -10,12 +11,18 @@ import {
   Hand,
   Accessibility,
   X,
-  ChevronDown
+  ChevronDown,
+  Volume2,
+  VolumeX,
+  Pause,
+  Play
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export function AccessibilityToolbar() {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [vlibrasLoaded, setVlibrasLoaded] = useState(false);
+  
   const {
     fontSize,
     increaseFontSize,
@@ -29,12 +36,49 @@ export function AccessibilityToolbar() {
     toggleReducedMotion,
   } = useAccessibility();
 
+  const { speakPage, stop, pause, resume, isSpeaking, isPaused } = useTextToSpeech();
+
+  // Load VLibras widget
+  useEffect(() => {
+    if (!vlibrasLoaded) {
+      const script = document.createElement('script');
+      script.src = 'https://vlibras.gov.br/app/vlibras-plugin.js';
+      script.async = true;
+      script.onload = () => {
+        // @ts-ignore
+        if (window.VLibras) {
+          // @ts-ignore
+          new window.VLibras.Widget('https://vlibras.gov.br/app');
+          setVlibrasLoaded(true);
+        }
+      };
+      document.head.appendChild(script);
+    }
+  }, [vlibrasLoaded]);
+
+  const handleTTS = () => {
+    if (isSpeaking && !isPaused) {
+      pause();
+    } else if (isPaused) {
+      resume();
+    } else {
+      speakPage();
+    }
+  };
+
   return (
     <div 
       className="fixed top-0 left-0 right-0 z-50"
       role="region"
       aria-label="Barra de acessibilidade"
     >
+      {/* VLibras container - usando dangerouslySetInnerHTML para atributos customizados */}
+      <div 
+        dangerouslySetInnerHTML={{
+          __html: `<div vw class="enabled"><div vw-access-button class="active"></div><div vw-plugin-wrapper><div class="vw-plugin-top-wrapper"></div></div></div>`
+        }} 
+      />
+
       {/* Botão principal de acessibilidade */}
       <div className="bg-primary text-primary-foreground">
         <div className="max-w-7xl mx-auto px-4 py-2 flex items-center justify-between">
@@ -134,17 +178,52 @@ export function AccessibilityToolbar() {
                   {reducedMotion ? 'Ativar Animações' : 'Reduzir Animações'}
                 </Button>
 
-                {/* VLibras - Widget externo */}
+                {/* Text-to-Speech */}
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => window.open('https://www.vlibras.gov.br/', '_blank')}
+                  onClick={handleTTS}
                   className="bg-transparent border-primary-foreground/50 text-primary-foreground hover:bg-primary-foreground/20"
-                  aria-label="Abrir VLibras para tradução em Libras"
+                  aria-label={isSpeaking ? (isPaused ? 'Continuar leitura' : 'Pausar leitura') : 'Ler página em voz alta'}
                 >
-                  <span className="mr-2 font-bold">🤟</span>
-                  VLibras
+                  {isSpeaking ? (
+                    isPaused ? (
+                      <>
+                        <Play className="w-4 h-4 mr-2" />
+                        Continuar
+                      </>
+                    ) : (
+                      <>
+                        <Pause className="w-4 h-4 mr-2" />
+                        Pausar
+                      </>
+                    )
+                  ) : (
+                    <>
+                      <Volume2 className="w-4 h-4 mr-2" />
+                      Ler Página
+                    </>
+                  )}
                 </Button>
+
+                {isSpeaking && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={stop}
+                    className="bg-transparent border-primary-foreground/50 text-primary-foreground hover:bg-primary-foreground/20"
+                    aria-label="Parar leitura"
+                  >
+                    <VolumeX className="w-4 h-4 mr-2" />
+                    Parar
+                  </Button>
+                )}
+
+                {/* VLibras Info */}
+                <div className="text-sm text-primary-foreground/80 flex items-center gap-2">
+                  <span className="font-bold">🤟</span>
+                  VLibras ativo (canto inferior direito)
+                </div>
 
                 <Button
                   variant="ghost"

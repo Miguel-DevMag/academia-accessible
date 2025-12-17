@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Layout } from '@/components/Layout';
-import { Clock, Target, Flame, ChevronRight } from 'lucide-react';
+import { Clock, Target, Flame, ChevronRight, Play, CheckCircle, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
 
 const workouts = [
   {
@@ -90,7 +91,63 @@ const workouts = [
   },
 ];
 
+interface ActiveWorkout {
+  workoutId: number;
+  currentExercise: number;
+  completedExercises: number[];
+}
+
 const Treinos = () => {
+  const [activeWorkout, setActiveWorkout] = useState<ActiveWorkout | null>(null);
+  const { toast } = useToast();
+
+  const startWorkout = (workoutId: number) => {
+    setActiveWorkout({
+      workoutId,
+      currentExercise: 0,
+      completedExercises: [],
+    });
+    toast({
+      title: 'Treino iniciado!',
+      description: 'Siga as instruções de cada exercício. Boa sorte!',
+    });
+  };
+
+  const completeExercise = (exerciseIndex: number) => {
+    if (!activeWorkout) return;
+    
+    const workout = workouts.find(w => w.id === activeWorkout.workoutId);
+    if (!workout) return;
+
+    const newCompleted = [...activeWorkout.completedExercises, exerciseIndex];
+    
+    if (newCompleted.length === workout.exercises.length) {
+      toast({
+        title: '🎉 Parabéns!',
+        description: 'Você completou o treino com sucesso!',
+      });
+      setActiveWorkout(null);
+    } else {
+      setActiveWorkout({
+        ...activeWorkout,
+        completedExercises: newCompleted,
+        currentExercise: exerciseIndex + 1,
+      });
+      toast({
+        title: 'Exercício concluído!',
+        description: `${newCompleted.length}/${workout.exercises.length} exercícios completos.`,
+      });
+    }
+  };
+
+  const stopWorkout = () => {
+    setActiveWorkout(null);
+    toast({
+      title: 'Treino encerrado',
+      description: 'Você pode recomeçar quando quiser.',
+    });
+  };
+
   return (
     <Layout>
       <div className="section-container">
@@ -105,97 +162,155 @@ const Treinos = () => {
 
         {/* Lista de treinos */}
         <div className="space-y-8">
-          {workouts.map((workout) => (
-            <article
-              key={workout.id}
-              className="card-accessible"
-              aria-labelledby={`workout-title-${workout.id}`}
-            >
-              {/* Cabeçalho do treino */}
-              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
-                <div>
-                  <span className="inline-block bg-primary/10 text-primary text-sm font-semibold px-3 py-1 rounded-full mb-2">
-                    {workout.level}
-                  </span>
-                  <h2 
-                    id={`workout-title-${workout.id}`}
-                    className="text-2xl font-display font-bold text-foreground"
-                  >
-                    {workout.title}
-                  </h2>
-                </div>
-
-                {/* Métricas */}
-                <div className="flex flex-wrap gap-4 text-sm">
-                  <div className="flex items-center gap-2 bg-muted px-3 py-2 rounded-lg">
-                    <Clock className="w-4 h-4 text-primary" aria-hidden="true" />
-                    <span>{workout.duration}</span>
-                  </div>
-                  <div className="flex items-center gap-2 bg-muted px-3 py-2 rounded-lg">
-                    <Flame className="w-4 h-4 text-secondary" aria-hidden="true" />
-                    <span>{workout.calories}</span>
-                  </div>
-                  <div className="flex items-center gap-2 bg-muted px-3 py-2 rounded-lg">
-                    <Target className="w-4 h-4 text-primary" aria-hidden="true" />
-                    <span>{workout.exercises.length} exercícios</span>
-                  </div>
-                </div>
-              </div>
-
-              <p className="text-muted-foreground mb-6">
-                {workout.description}
-              </p>
-
-              {/* Lista de exercícios */}
-              <div className="border-t border-border pt-6">
-                <h3 className="text-lg font-display font-semibold text-foreground mb-4">
-                  Exercícios do Treino
-                </h3>
-
-                <div className="space-y-4">
-                  {workout.exercises.map((exercise, index) => (
-                    <details
-                      key={index}
-                      className="group bg-muted rounded-xl"
+          {workouts.map((workout) => {
+            const isActive = activeWorkout?.workoutId === workout.id;
+            
+            return (
+              <article
+                key={workout.id}
+                className={`card-accessible ${isActive ? 'ring-2 ring-primary' : ''}`}
+                aria-labelledby={`workout-title-${workout.id}`}
+              >
+                {/* Cabeçalho do treino */}
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+                  <div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="inline-block bg-primary/10 text-primary text-sm font-semibold px-3 py-1 rounded-full">
+                        {workout.level}
+                      </span>
+                      {isActive && (
+                        <span className="inline-block bg-secondary/10 text-secondary text-sm font-semibold px-3 py-1 rounded-full animate-pulse">
+                          Em andamento
+                        </span>
+                      )}
+                    </div>
+                    <h2 
+                      id={`workout-title-${workout.id}`}
+                      className="text-2xl font-display font-bold text-foreground"
                     >
-                      <summary className="flex items-center justify-between p-4 cursor-pointer list-none hover:bg-muted/80 rounded-xl transition-colors">
-                        <div className="flex items-center gap-4">
-                          <span className="w-8 h-8 bg-primary/10 text-primary rounded-lg flex items-center justify-center font-bold text-sm">
-                            {index + 1}
-                          </span>
-                          <div>
-                            <p className="font-semibold text-foreground">
-                              {exercise.name}
-                            </p>
-                            <p className="text-sm text-muted-foreground">
-                              {exercise.sets} · {exercise.reps}
-                            </p>
-                          </div>
-                        </div>
-                        <ChevronRight 
-                          className="w-5 h-5 text-muted-foreground group-open:rotate-90 transition-transform" 
-                          aria-hidden="true" 
-                        />
-                      </summary>
-                      <div className="px-4 pb-4 pt-2">
-                        <p className="text-foreground leading-relaxed pl-12">
-                          <strong className="block mb-1">Como executar:</strong>
-                          {exercise.description}
-                        </p>
-                      </div>
-                    </details>
-                  ))}
-                </div>
-              </div>
+                      {workout.title}
+                    </h2>
+                  </div>
 
-              {/* Botão de ação */}
-              <div className="mt-6 pt-6 border-t border-border">
-                <Button className="w-full sm:w-auto">
-                  Iniciar este treino
-                </Button>
-              </div>
-            </article>
-          ))}
+                  {/* Métricas */}
+                  <div className="flex flex-wrap gap-4 text-sm">
+                    <div className="flex items-center gap-2 bg-muted px-3 py-2 rounded-lg">
+                      <Clock className="w-4 h-4 text-primary" aria-hidden="true" />
+                      <span>{workout.duration}</span>
+                    </div>
+                    <div className="flex items-center gap-2 bg-muted px-3 py-2 rounded-lg">
+                      <Flame className="w-4 h-4 text-secondary" aria-hidden="true" />
+                      <span>{workout.calories}</span>
+                    </div>
+                    <div className="flex items-center gap-2 bg-muted px-3 py-2 rounded-lg">
+                      <Target className="w-4 h-4 text-primary" aria-hidden="true" />
+                      <span>{workout.exercises.length} exercícios</span>
+                    </div>
+                  </div>
+                </div>
+
+                <p className="text-muted-foreground mb-6">
+                  {workout.description}
+                </p>
+
+                {/* Lista de exercícios */}
+                <div className="border-t border-border pt-6">
+                  <h3 className="text-lg font-display font-semibold text-foreground mb-4">
+                    Exercícios do Treino
+                  </h3>
+
+                  <div className="space-y-4">
+                    {workout.exercises.map((exercise, index) => {
+                      const isCompleted = isActive && activeWorkout.completedExercises.includes(index);
+                      const isCurrent = isActive && activeWorkout.currentExercise === index;
+                      
+                      return (
+                        <details
+                          key={index}
+                          className={`group bg-muted rounded-xl ${isCurrent ? 'ring-2 ring-secondary' : ''}`}
+                          open={isCurrent}
+                        >
+                          <summary className="flex items-center justify-between p-4 cursor-pointer list-none hover:bg-muted/80 rounded-xl transition-colors">
+                            <div className="flex items-center gap-4">
+                              <span className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm ${
+                                isCompleted 
+                                  ? 'bg-green-500/20 text-green-600' 
+                                  : isCurrent 
+                                    ? 'bg-secondary/20 text-secondary'
+                                    : 'bg-primary/10 text-primary'
+                              }`}>
+                                {isCompleted ? <CheckCircle className="w-5 h-5" /> : index + 1}
+                              </span>
+                              <div>
+                                <p className={`font-semibold ${isCompleted ? 'line-through text-muted-foreground' : 'text-foreground'}`}>
+                                  {exercise.name}
+                                </p>
+                                <p className="text-sm text-muted-foreground">
+                                  {exercise.sets} · {exercise.reps}
+                                </p>
+                              </div>
+                            </div>
+                            <ChevronRight 
+                              className="w-5 h-5 text-muted-foreground group-open:rotate-90 transition-transform" 
+                              aria-hidden="true" 
+                            />
+                          </summary>
+                          <div className="px-4 pb-4 pt-2">
+                            <p className="text-foreground leading-relaxed pl-12 mb-4">
+                              <strong className="block mb-1">Como executar:</strong>
+                              {exercise.description}
+                            </p>
+                            {isActive && !isCompleted && (
+                              <div className="pl-12">
+                                <Button 
+                                  onClick={() => completeExercise(index)}
+                                  className="bg-green-600 hover:bg-green-700"
+                                >
+                                  <CheckCircle className="w-4 h-4 mr-2" />
+                                  Marcar como concluído
+                                </Button>
+                              </div>
+                            )}
+                          </div>
+                        </details>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Botão de ação */}
+                <div className="mt-6 pt-6 border-t border-border flex flex-wrap gap-3">
+                  {isActive ? (
+                    <>
+                      <div className="flex-grow">
+                        <p className="text-sm text-muted-foreground">
+                          Progresso: {activeWorkout.completedExercises.length}/{workout.exercises.length} exercícios
+                        </p>
+                        <div className="w-full bg-muted rounded-full h-2 mt-2">
+                          <div 
+                            className="bg-primary h-2 rounded-full transition-all"
+                            style={{ width: `${(activeWorkout.completedExercises.length / workout.exercises.length) * 100}%` }}
+                          />
+                        </div>
+                      </div>
+                      <Button variant="destructive" onClick={stopWorkout}>
+                        <X className="w-4 h-4 mr-2" />
+                        Encerrar treino
+                      </Button>
+                    </>
+                  ) : (
+                    <Button 
+                      className="w-full sm:w-auto"
+                      onClick={() => startWorkout(workout.id)}
+                    >
+                      <Play className="w-4 h-4 mr-2" />
+                      Iniciar este treino
+                    </Button>
+                  )}
+                </div>
+              </article>
+            );
+          })}
         </div>
       </div>
     </Layout>
