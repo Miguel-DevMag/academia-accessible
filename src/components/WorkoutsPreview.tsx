@@ -39,7 +39,7 @@ export function WorkoutsPreview() {
       className="bg-muted/50 py-20"
       aria-labelledby="workouts-heading"
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 animate-fade-in">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-12">
           <div>
@@ -59,12 +59,13 @@ export function WorkoutsPreview() {
         </div>
 
         {/* Grid de treinos */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6" role="list">
           {workouts.map((workout, index) => (
             <article
               key={workout.id}
-              className="card-accessible flex flex-col"
+              className="card-accessible flex flex-col animate-slide-up"
               style={{ animationDelay: `${index * 100}ms` }}
+              role="listitem"
             >
               {/* Badge de nível */}
               <div className="flex items-center gap-2 mb-4">
@@ -113,7 +114,11 @@ export function WorkoutsPreview() {
               </div>
 
               <Button asChild className="w-full mt-auto">
-                <Link to={`/treinos/${workout.id}`}>
+                <Link 
+                  to="/treinos"
+                  state={{ selectedWorkoutId: workout.id }}
+                  aria-label={`Ver treino completo: ${workout.title}`}
+                >
                   Ver treino completo
                 </Link>
               </Button>
