@@ -3,79 +3,12 @@ import { Layout } from '@/components/Layout';
 import { Play, Clock, Captions, Hand, X, Pause } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-
-const videos = [
-  {
-    id: 1,
-    title: 'Aquecimento Completo - 10 Minutos',
-    description: 'Rotina de aquecimento para preparar seu corpo antes de qualquer treino. Movimentos simples e eficazes.',
-    duration: '10:00',
-    category: 'Aquecimento',
-    hasSubtitles: true,
-    hasLibras: true,
-    thumbnail: '🔥',
-    videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ', // Placeholder
-  },
-  {
-    id: 2,
-    title: 'Treino de Força para Iniciantes',
-    description: 'Aprenda os movimentos básicos de força com explicações detalhadas de cada exercício.',
-    duration: '25:00',
-    category: 'Força',
-    hasSubtitles: true,
-    hasLibras: true,
-    thumbnail: '💪',
-    videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
-  },
-  {
-    id: 3,
-    title: 'Alongamento Pós-Treino',
-    description: 'Sequência de alongamentos para relaxar os músculos e melhorar a recuperação após o exercício.',
-    duration: '15:00',
-    category: 'Alongamento',
-    hasSubtitles: true,
-    hasLibras: true,
-    thumbnail: '🧘',
-    videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
-  },
-  {
-    id: 4,
-    title: 'Cardio em Casa - Sem Equipamentos',
-    description: 'Treino cardiovascular que pode ser feito em qualquer lugar, usando apenas o peso do corpo.',
-    duration: '20:00',
-    category: 'Cardio',
-    hasSubtitles: true,
-    hasLibras: true,
-    thumbnail: '🏃',
-    videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
-  },
-  {
-    id: 5,
-    title: 'Dança Inclusiva - Ritmos Variados',
-    description: 'Aula de dança adaptada para todos os níveis e habilidades. Divirta-se enquanto se exercita!',
-    duration: '30:00',
-    category: 'Dança',
-    hasSubtitles: true,
-    hasLibras: true,
-    thumbnail: '💃',
-    videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
-  },
-  {
-    id: 6,
-    title: 'Técnicas de Respiração e Relaxamento',
-    description: 'Aprenda técnicas de respiração para reduzir o estresse e melhorar sua performance.',
-    duration: '12:00',
-    category: 'Bem-estar',
-    hasSubtitles: true,
-    hasLibras: true,
-    thumbnail: '🌿',
-    videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
-  },
-];
+import { videosConfig } from '@/data/videosConfig';
 
 const Videos = () => {
   const [activeVideo, setActiveVideo] = useState<number | null>(null);
   const { toast } = useToast();
+  const videos = videosConfig;
 
   const playVideo = (videoId: number) => {
     setActiveVideo(videoId);
@@ -121,13 +54,26 @@ const Videos = () => {
                 </Button>
               </div>
               <div className="aspect-video bg-muted">
-                <iframe
-                  src={`${activeVideoData.videoUrl}?cc_load_policy=1&cc_lang_pref=pt`}
-                  title={activeVideoData.title}
-                  className="w-full h-full"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                />
+                {activeVideoData.videoUrl.startsWith('http') ? (
+                  // YouTube iframe
+                  <iframe
+                    src={`${activeVideoData.videoUrl}?cc_load_policy=1&cc_lang_pref=pt`}
+                    title={activeVideoData.title}
+                    className="w-full h-full"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  />
+                ) : (
+                  // HTML5 video player para arquivos locais
+                  <video
+                    controls
+                    className="w-full h-full bg-black"
+                    title={activeVideoData.title}
+                  >
+                    <source src={activeVideoData.videoUrl} type="video/mp4" />
+                    Seu navegador não suporta a tag de vídeo.
+                  </video>
+                )}
               </div>
               <div className="p-4">
                 <p className="text-muted-foreground">{activeVideoData.description}</p>
