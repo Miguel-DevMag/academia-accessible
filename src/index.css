@@ -5,6 +5,28 @@
 /* Academia - Design System Acessível */
 @import url('https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Outfit:wght@400;500;600;700;800&display=swap');
 
+/* VLibras styles - Garantir visibilidade */
+[vw] {
+  position: fixed !important;
+  bottom: 20px !important;
+  right: 20px !important;
+  z-index: 9999 !important;
+}
+
+[vw-access-button] {
+  position: fixed !important;
+  bottom: 20px !important;
+  right: 20px !important;
+  z-index: 10000 !important;
+}
+
+[vw-plugin-wrapper] {
+  position: fixed !important;
+  bottom: 80px !important;
+  right: 20px !important;
+  z-index: 9998 !important;
+}
+
 @layer base {
   :root {
     /* Cores principais - Alto contraste por padrão */
@@ -210,11 +232,24 @@
 
   /* Animações suaves */
   .animate-fade-in {
-    animation: fadeIn 0.5s ease-out forwards;
+    animation: fadeIn 0.8s ease-out forwards;
   }
 
   .animate-slide-up {
-    animation: slideUp 0.6s ease-out forwards;
+    animation: slideUp 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    opacity: 0;
+  }
+
+  .animate-scale-in {
+    animation: scaleIn 0.6s ease-out forwards;
+  }
+
+  .animate-bounce-in {
+    animation: bounceIn 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  }
+
+  .animate-pulse {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   }
 
   @keyframes fadeIn {
@@ -225,11 +260,45 @@
   @keyframes slideUp {
     from { 
       opacity: 0; 
-      transform: translateY(20px); 
+      transform: translateY(30px); 
     }
     to { 
       opacity: 1; 
       transform: translateY(0); 
+    }
+  }
+
+  @keyframes scaleIn {
+    from {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  @keyframes bounceIn {
+    0% {
+      opacity: 0;
+      transform: scale(0.3) translateY(20px);
+    }
+    50% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+    }
+  }
+
+  @keyframes pulse {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.5;
     }
   }
 
