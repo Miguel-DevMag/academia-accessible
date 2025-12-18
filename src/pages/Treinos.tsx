@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Layout } from '@/components/Layout';
 import { Clock, Target, Flame, ChevronRight, Play, CheckCircle, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -99,7 +100,16 @@ interface ActiveWorkout {
 
 const Treinos = () => {
   const [activeWorkout, setActiveWorkout] = useState<ActiveWorkout | null>(null);
+  const location = useLocation();
   const { toast } = useToast();
+
+  // Auto-select treino quando vem de outro lugar
+  useEffect(() => {
+    const state = location.state as { selectedWorkoutId?: number } | null;
+    if (state?.selectedWorkoutId && !activeWorkout) {
+      startWorkout(state.selectedWorkoutId);
+    }
+  }, [location.state]);
 
   const startWorkout = (workoutId: number) => {
     setActiveWorkout({
@@ -161,14 +171,14 @@ const Treinos = () => {
         </header>
 
         {/* Lista de treinos */}
-        <div className="space-y-8">
+        <div className="space-y-8 animate-fade-in">
           {workouts.map((workout) => {
             const isActive = activeWorkout?.workoutId === workout.id;
             
             return (
               <article
                 key={workout.id}
-                className={`card-accessible ${isActive ? 'ring-2 ring-primary' : ''}`}
+                className={`card-accessible animate-slide-up ${isActive ? 'ring-2 ring-primary' : ''}`}
                 aria-labelledby={`workout-title-${workout.id}`}
               >
                 {/* Cabeçalho do treino */}
