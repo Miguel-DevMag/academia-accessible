@@ -2,7 +2,7 @@
 
 ## Informações do Projeto
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+**URL**: https://academia-accessible.lovable.app/
 
 ---
 
