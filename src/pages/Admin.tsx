@@ -2,10 +2,23 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Layout } from '@/components/Layout';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Users, User, Trash2, Shield, ShieldCheck, Calendar, Mail } from 'lucide-react';
+import { 
+  Users, User, Trash2, Shield, ShieldCheck, Calendar, Mail, 
+  Bell, Send, Dumbbell, Pill, Clock, Info 
+} from 'lucide-react';
 
 interface UserProfile {
   id: string;
@@ -17,12 +30,21 @@ interface UserProfile {
   isAdmin?: boolean;
 }
 
+type NotificationType = 'workout' | 'supplement' | 'reminder' | 'info';
+
 const Admin = () => {
   const { user, isAdmin, loading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  
+  // Notification form state
+  const [notifTitle, setNotifTitle] = useState('');
+  const [notifMessage, setNotifMessage] = useState('');
+  const [notifType, setNotifType] = useState<NotificationType>('info');
+  const [notifTarget, setNotifTarget] = useState<string>('all');
+  const [sendingNotif, setSendingNotif] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -170,6 +192,59 @@ const Admin = () => {
     fetchUsers();
   };
 
+  const sendNotification = async () => {
+    if (!notifTitle.trim() || !notifMessage.trim()) {
+      toast({
+        variant: 'destructive',
+        title: 'Erro',
+        description: 'Preencha o título e a mensagem da notificação.',
+      });
+      return;
+    }
+
+    setSendingNotif(true);
+
+    try {
+      const targetUsers = notifTarget === 'all' 
+        ? users.map(u => u.user_id)
+        : [notifTarget];
+
+      const notifications = targetUsers.map(userId => ({
+        user_id: userId,
+        title: notifTitle.trim(),
+        message: notifMessage.trim(),
+        type: notifType,
+      }));
+
+      const { error } = await supabase
+        .from('notifications')
+        .insert(notifications);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Notificação enviada!',
+        description: notifTarget === 'all' 
+          ? `Notificação enviada para ${targetUsers.length} usuários.`
+          : 'Notificação enviada com sucesso.',
+      });
+
+      setNotifTitle('');
+      setNotifMessage('');
+      setNotifType('info');
+      setNotifTarget('all');
+    } catch (error) {
+      console.error('Error sending notification:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Erro',
+        description: 'Não foi possível enviar a notificação.',
+      });
+    } finally {
+      setSendingNotif(false);
+    }
+  };
+
   if (loading || isLoading) {
     return (
       <Layout>
@@ -191,9 +266,120 @@ const Admin = () => {
             Painel Administrativo
           </h1>
           <p className="section-subtitle">
-            Gerencie os usuários cadastrados na plataforma
+            Gerencie usuários e envie notificações para a plataforma
           </p>
         </header>
+
+        {/* Sistema de Notificações */}
+        <div className="card-accessible mb-8">
+          <h2 className="text-xl font-display font-bold text-foreground mb-6 flex items-center gap-2">
+            <Bell className="w-5 h-5" />
+            Enviar Notificação
+          </h2>
+          
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="notif-title">Título da Notificação</Label>
+              <Input
+                id="notif-title"
+                value={notifTitle}
+                onChange={(e) => setNotifTitle(e.target.value)}
+                placeholder="Ex: Novo treino disponível!"
+                maxLength={100}
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="notif-type">Tipo</Label>
+              <Select value={notifType} onValueChange={(v) => setNotifType(v as NotificationType)}>
+                <SelectTrigger id="notif-type">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="workout">
+                    <span className="flex items-center gap-2">
+                      <Dumbbell className="w-4 h-4 text-blue-600" />
+                      Treino
+                    </span>
+                  </SelectItem>
+                  <SelectItem value="supplement">
+                    <span className="flex items-center gap-2">
+                      <Pill className="w-4 h-4 text-green-600" />
+                      Suplemento
+                    </span>
+                  </SelectItem>
+                  <SelectItem value="reminder">
+                    <span className="flex items-center gap-2">
+                      <Clock className="w-4 h-4 text-orange-600" />
+                      Lembrete
+                    </span>
+                  </SelectItem>
+                  <SelectItem value="info">
+                    <span className="flex items-center gap-2">
+                      <Info className="w-4 h-4 text-purple-600" />
+                      Informação
+                    </span>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="space-y-2 md:col-span-2">
+              <Label htmlFor="notif-message">Mensagem</Label>
+              <Textarea
+                id="notif-message"
+                value={notifMessage}
+                onChange={(e) => setNotifMessage(e.target.value)}
+                placeholder="Digite a mensagem da notificação..."
+                rows={3}
+                maxLength={500}
+              />
+              <p className="text-xs text-muted-foreground">{notifMessage.length}/500 caracteres</p>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="notif-target">Destinatário</Label>
+              <Select value={notifTarget} onValueChange={setNotifTarget}>
+                <SelectTrigger id="notif-target">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">
+                    <span className="flex items-center gap-2">
+                      <Users className="w-4 h-4" />
+                      Todos os usuários ({users.length})
+                    </span>
+                  </SelectItem>
+                  {users.map((u) => (
+                    <SelectItem key={u.user_id} value={u.user_id}>
+                      {u.full_name || u.email || 'Usuário sem nome'}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="flex items-end">
+              <Button
+                onClick={sendNotification}
+                disabled={sendingNotif || !notifTitle.trim() || !notifMessage.trim()}
+                className="w-full bg-gradient-accent hover:opacity-90"
+              >
+                {sendingNotif ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                    Enviando...
+                  </>
+                ) : (
+                  <>
+                    <Send className="w-4 h-4 mr-2" />
+                    Enviar Notificação
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
 
         {/* Estatísticas */}
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">

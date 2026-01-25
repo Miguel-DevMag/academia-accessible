@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Menu, X, Dumbbell, User, LogOut, Shield } from 'lucide-react';
+import { Menu, X, Dumbbell, User, LogOut, Shield, Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
+import { NotificationBell } from '@/components/NotificationBell';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -69,7 +70,9 @@ export function Header() {
           </div>
 
           {/* User Menu / Login */}
-          <div className="hidden md:flex items-center gap-3">
+          <div className="hidden md:flex items-center gap-2">
+            {user && <NotificationBell />}
+            
             {user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -172,6 +175,9 @@ export function Header() {
               
               {user ? (
                 <>
+                  <div className="px-4 py-2">
+                    <NotificationBell />
+                  </div>
                   <Link
                     to="/perfil"
                     className="px-4 py-3 text-foreground hover:bg-muted rounded-lg transition-colors font-medium text-lg flex items-center gap-2"
