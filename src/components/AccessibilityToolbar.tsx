@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useAccessibility } from '@/contexts/AccessibilityContext';
 import { useTextToSpeech } from '@/hooks/useTextToSpeech';
 import { 
@@ -21,7 +21,8 @@ import { Button } from '@/components/ui/button';
 
 export function AccessibilityToolbar() {
   const [isExpanded, setIsExpanded] = useState(false);
-  const [vlibrasLoaded, setVlibrasLoaded] = useState(false);
+  const [vlibrasVisible, setVlibrasVisible] = useState(false);
+  const [vlibrasReady, setVlibrasReady] = useState(false);
   
   const {
     fontSize,
@@ -38,120 +39,102 @@ export function AccessibilityToolbar() {
 
   const { speakPage, stop, pause, resume, isSpeaking, isPaused } = useTextToSpeech();
 
-  // Load VLibras widget com estrutura HTML correta
-  useEffect(() => {
-    console.log('🔍 Iniciando carregamento VLibras...');
-    
-    // Limpar container existente para evitar duplicatas
-    const existingContainer = document.getElementById('vlibras-container');
-    if (existingContainer) {
-      existingContainer.remove();
+  const showVlibras = useCallback(() => {
+    const container = document.getElementById('vlibras-container');
+    if (container) {
+      container.style.display = 'block';
+    }
+  }, []);
+
+  const hideVlibras = useCallback(() => {
+    const container = document.getElementById('vlibras-container');
+    if (container) {
+      container.style.display = 'none';
+    }
+  }, []);
+
+  const loadAndShowVlibras = useCallback(() => {
+    // Create container if not exists
+    let container = document.getElementById('vlibras-container');
+    if (!container) {
+      container = document.createElement('div');
+      container.id = 'vlibras-container';
+      container.setAttribute('role', 'complementary');
+      container.setAttribute('aria-label', 'Tradutor de Libras VLibras');
+
+      const vwDiv = document.createElement('div');
+      vwDiv.setAttribute('vw', '');
+      vwDiv.className = 'enabled';
+
+      const accessButton = document.createElement('div');
+      accessButton.setAttribute('vw-access-button', '');
+      accessButton.className = 'active';
+      accessButton.setAttribute('role', 'button');
+      accessButton.setAttribute('tabindex', '0');
+      accessButton.setAttribute('aria-label', 'Ativar tradutor de Libras');
+
+      const pluginWrapper = document.createElement('div');
+      pluginWrapper.setAttribute('vw-plugin-wrapper', '');
+
+      const topWrapper = document.createElement('div');
+      topWrapper.className = 'vw-plugin-top-wrapper';
+
+      pluginWrapper.appendChild(topWrapper);
+      vwDiv.appendChild(accessButton);
+      vwDiv.appendChild(pluginWrapper);
+      container.appendChild(vwDiv);
+      document.body.appendChild(container);
     }
 
-    // Criar estrutura HTML do VLibras conforme documentação oficial
-    const container = document.createElement('div');
-    container.id = 'vlibras-container';
-    container.setAttribute('role', 'complementary');
-    container.setAttribute('aria-label', 'Tradutor de Libras VLibras');
-    
-    // Estrutura exigida pelo VLibras
-    const vwDiv = document.createElement('div');
-    vwDiv.setAttribute('vw', '');
-    vwDiv.className = 'enabled';
-    
-    const accessButton = document.createElement('div');
-    accessButton.setAttribute('vw-access-button', '');
-    accessButton.className = 'active';
-    accessButton.setAttribute('role', 'button');
-    accessButton.setAttribute('tabindex', '0');
-    accessButton.setAttribute('aria-label', 'Ativar tradutor de Libras');
-    
-    const pluginWrapper = document.createElement('div');
-    pluginWrapper.setAttribute('vw-plugin-wrapper', '');
-    
-    const topWrapper = document.createElement('div');
-    topWrapper.className = 'vw-plugin-top-wrapper';
-    
-    pluginWrapper.appendChild(topWrapper);
-    vwDiv.appendChild(accessButton);
-    vwDiv.appendChild(pluginWrapper);
-    container.appendChild(vwDiv);
-    document.body.appendChild(container);
+    container.style.display = 'block';
 
-    // Carregar o script do VLibras
-    const loadVLibrasScript = () => {
-      const existingScript = document.getElementById('vlibras-script');
-      if (existingScript) {
-        existingScript.remove();
-      }
-
+    // Load script if not loaded
+    if (!document.getElementById('vlibras-script')) {
       const script = document.createElement('script');
       script.id = 'vlibras-script';
       script.src = 'https://vlibras.gov.br/app/vlibras-plugin.js';
       script.async = true;
       script.type = 'text/javascript';
-      
+
       script.onload = () => {
-        console.log('✅ Script VLibras carregado');
-        initializeVLibras();
-      };
-      
-      script.onerror = () => {
-        console.error('❌ Erro ao carregar script VLibras');
-        setVlibrasLoaded(true);
-      };
-      
-      document.head.appendChild(script);
-    };
-
-    const initializeVLibras = () => {
-      let attempts = 0;
-      const maxAttempts = 50; // 5 segundos
-      
-      const checkVLibras = setInterval(() => {
-        attempts++;
-        // @ts-ignore
-        if (window.VLibras && window.VLibras.Widget) {
-          clearInterval(checkVLibras);
-          try {
-            console.log('✅ Inicializando VLibras Widget...');
-            // @ts-ignore
-            new window.VLibras.Widget('https://vlibras.gov.br/app');
-            setVlibrasLoaded(true);
-            console.log('✅ VLibras Widget inicializado com sucesso!');
-            
-            // Garantir visibilidade do botão após inicialização
-            setTimeout(() => {
-              const btn = document.querySelector('[vw-access-button]');
-              if (btn) {
-                (btn as HTMLElement).style.display = 'flex';
-                (btn as HTMLElement).style.visibility = 'visible';
-                (btn as HTMLElement).style.opacity = '1';
-              }
-            }, 500);
-          } catch (error) {
-            console.error('❌ Erro ao inicializar VLibras Widget:', error);
-            setVlibrasLoaded(true);
+        const checkVLibras = setInterval(() => {
+          // @ts-ignore
+          if (window.VLibras && window.VLibras.Widget) {
+            clearInterval(checkVLibras);
+            try {
+              // @ts-ignore
+              new window.VLibras.Widget('https://vlibras.gov.br/app');
+              setVlibrasReady(true);
+            } catch (error) {
+              console.error('Erro ao inicializar VLibras:', error);
+            }
           }
-        } else if (attempts >= maxAttempts) {
-          clearInterval(checkVLibras);
-          console.warn('⚠️ Timeout ao aguardar VLibras');
-          setVlibrasLoaded(true);
-        }
-      }, 100);
-    };
+        }, 100);
 
-    // Aguardar um momento para garantir que o DOM está pronto
-    setTimeout(loadVLibrasScript, 100);
+        // Timeout after 5s
+        setTimeout(() => clearInterval(checkVLibras), 5000);
+      };
 
-    // Cleanup
-    return () => {
-      const container = document.getElementById('vlibras-container');
-      if (container) {
-        container.remove();
-      }
-    };
+      script.onerror = () => console.error('Erro ao carregar script VLibras');
+      document.head.appendChild(script);
+    } else {
+      setVlibrasReady(true);
+    }
   }, []);
+
+  const toggleVlibras = useCallback(() => {
+    if (vlibrasVisible) {
+      hideVlibras();
+      setVlibrasVisible(false);
+    } else {
+      if (!vlibrasReady) {
+        loadAndShowVlibras();
+      } else {
+        showVlibras();
+      }
+      setVlibrasVisible(true);
+    }
+  }, [vlibrasVisible, vlibrasReady, hideVlibras, showVlibras, loadAndShowVlibras]);
 
   const handleTTS = () => {
     if (isSpeaking && !isPaused) {
@@ -169,7 +152,6 @@ export function AccessibilityToolbar() {
       role="region"
       aria-label="Barra de acessibilidade"
     >
-      {/* Botão principal de acessibilidade */}
       <div className="bg-primary text-primary-foreground">
         <div className="max-w-7xl mx-auto px-4 py-2 flex items-center justify-between">
           <button
@@ -186,7 +168,6 @@ export function AccessibilityToolbar() {
             />
           </button>
 
-          {/* Controles rápidos visíveis sempre */}
           <div className="flex items-center gap-2">
             <span className="text-sm mr-2 hidden sm:inline">Fonte:</span>
             <Button
@@ -213,7 +194,6 @@ export function AccessibilityToolbar() {
           </div>
         </div>
 
-        {/* Painel expandido */}
         {isExpanded && (
           <div 
             id="accessibility-options"
@@ -268,7 +248,6 @@ export function AccessibilityToolbar() {
                   {reducedMotion ? 'Ativar Animações' : 'Reduzir Animações'}
                 </Button>
 
-                {/* Text-to-Speech */}
                 <Button
                   variant="outline"
                   size="sm"
@@ -309,64 +288,19 @@ export function AccessibilityToolbar() {
                   </Button>
                 )}
 
-                {/* VLibras Button */}
+                {/* VLibras Toggle Button */}
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => {
-                    const activateVLibras = () => {
-                      // @ts-ignore
-                      if (window.VLibras) {
-                        try {
-                          // @ts-ignore
-                          new window.VLibras.Widget('https://vlibras.gov.br/app');
-                          setVlibrasLoaded(true);
-                          console.log('✅ VLibras ativado manualmente');
-                        } catch (error) {
-                          console.error('Erro ao ativar VLibras:', error);
-                        }
-                      } else {
-                        console.warn('VLibras ainda não disponível');
-                      }
-                    };
-
-                    // Ensure container exists
-                    if (!document.getElementById('vlibras-container')) {
-                      const vlibrasHTML = `
-                        <div vw class="enabled">
-                          <div vw-access-button class="active"></div>
-                          <div vw-plugin-wrapper>
-                            <div class="vw-plugin-top-wrapper"></div>
-                          </div>
-                        </div>
-                      `;
-                      const container = document.createElement('div');
-                      container.id = 'vlibras-container';
-                      container.innerHTML = vlibrasHTML;
-                      document.body.appendChild(container);
-                    }
-
-                    // If script not loaded, load and init
-                    if (!document.getElementById('vlibras-script')) {
-                      const script = document.createElement('script');
-                      script.id = 'vlibras-script';
-                      script.src = 'https://vlibras.gov.br/app/vlibras-plugin.js';
-                      script.async = true;
-                      script.onload = () => {
-                        console.log('✅ Script VLibras carregado via botão');
-                        setTimeout(activateVLibras, 500);
-                      };
-                      script.onerror = () => console.error('Erro ao carregar script VLibras via botão');
-                      document.head.appendChild(script);
-                    } else {
-                      activateVLibras();
-                    }
-                  }}
-                  className="bg-transparent border-primary-foreground/50 text-primary-foreground hover:bg-primary-foreground/20"
-                  aria-label="Ativar VLibras"
+                  onClick={toggleVlibras}
+                  className={`border-primary-foreground/50 text-primary-foreground hover:bg-primary-foreground/20 ${
+                    vlibrasVisible ? 'bg-primary-foreground/20' : 'bg-transparent'
+                  }`}
+                  aria-pressed={vlibrasVisible}
+                  aria-label={vlibrasVisible ? 'Desativar VLibras' : 'Ativar VLibras'}
                 >
                   <Hand className="w-4 h-4 mr-2" />
-                  🤟 VLibras
+                  🤟 {vlibrasVisible ? 'Fechar Libras' : 'Libras'}
                 </Button>
 
                 <Button

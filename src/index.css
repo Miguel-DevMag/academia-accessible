@@ -5,13 +5,14 @@
 /* Academia - Design System Acessível */
 @import url('https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Outfit:wght@400;500;600;700;800&display=swap');
 
-/* VLibras styles - Garantir visibilidade máxima */
+/* VLibras styles - Hidden by default, shown via toggle */
 #vlibras-container {
   position: fixed !important;
   bottom: 0 !important;
   right: 0 !important;
   z-index: 99999 !important;
   pointer-events: auto !important;
+  display: none;
 }
 
 div[vw] {
@@ -19,14 +20,6 @@ div[vw] {
   bottom: 0 !important;
   right: 0 !important;
   z-index: 99999 !important;
-  display: block !important;
-  visibility: visible !important;
-  opacity: 1 !important;
-}
-
-div[vw].enabled {
-  display: block !important;
-  visibility: visible !important;
 }
 
 div[vw-access-button] {
@@ -34,19 +27,10 @@ div[vw-access-button] {
   bottom: 10px !important;
   right: 10px !important;
   z-index: 999999 !important;
-  display: flex !important;
-  visibility: visible !important;
-  opacity: 1 !important;
   width: 76px !important;
   height: 76px !important;
   cursor: pointer !important;
   pointer-events: auto !important;
-}
-
-div[vw-access-button].active {
-  display: flex !important;
-  visibility: visible !important;
-  opacity: 1 !important;
 }
 
 div[vw-plugin-wrapper] {
@@ -54,21 +38,6 @@ div[vw-plugin-wrapper] {
   bottom: 100px !important;
   right: 10px !important;
   z-index: 99998 !important;
-  display: block !important;
-}
-
-/* Garantir que o avatar VLibras seja visível */
-.vw-plugin-top-wrapper,
-.vp-player,
-.vp-avatar {
-  display: block !important;
-  visibility: visible !important;
-}
-
-/* Animação suave para o botão VLibras */
-div[vw-access-button]:hover {
-  transform: scale(1.05) !important;
-  transition: transform 0.2s ease !important;
 }
 
 /* Foco acessível para VLibras */
