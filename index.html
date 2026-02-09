@@ -28,5 +28,23 @@
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+    
+    <!-- VLibras Widget - Hidden by default, toggled via accessibility toolbar -->
+    <div id="vlibras-container" style="display:none;">
+      <div vw class="enabled">
+        <div vw-access-button class="active" role="button" tabindex="0" aria-label="Ativar tradutor de Libras"></div>
+        <div vw-plugin-wrapper>
+          <div class="vw-plugin-top-wrapper"></div>
+        </div>
+      </div>
+    </div>
+    <script id="vlibras-script" src="https://vlibras.gov.br/app/vlibras-plugin.js" defer></script>
+    <script>
+      window.addEventListener('load', function() {
+        if (window.VLibras && window.VLibras.Widget) {
+          new window.VLibras.Widget('https://vlibras.gov.br/app');
+        }
+      });
+    </script>
   </body>
 </html>
