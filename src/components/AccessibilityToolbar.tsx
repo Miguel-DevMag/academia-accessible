@@ -22,7 +22,6 @@ import { Button } from '@/components/ui/button';
 export function AccessibilityToolbar() {
   const [isExpanded, setIsExpanded] = useState(false);
   const [vlibrasVisible, setVlibrasVisible] = useState(false);
-  const [vlibrasReady, setVlibrasReady] = useState(false);
   
   const {
     fontSize,
@@ -39,102 +38,18 @@ export function AccessibilityToolbar() {
 
   const { speakPage, stop, pause, resume, isSpeaking, isPaused } = useTextToSpeech();
 
-  const showVlibras = useCallback(() => {
-    const container = document.getElementById('vlibras-container');
-    if (container) {
-      container.style.display = 'block';
-    }
-  }, []);
-
-  const hideVlibras = useCallback(() => {
-    const container = document.getElementById('vlibras-container');
-    if (container) {
-      container.style.display = 'none';
-    }
-  }, []);
-
-  const loadAndShowVlibras = useCallback(() => {
-    // Create container if not exists
-    let container = document.getElementById('vlibras-container');
-    if (!container) {
-      container = document.createElement('div');
-      container.id = 'vlibras-container';
-      container.setAttribute('role', 'complementary');
-      container.setAttribute('aria-label', 'Tradutor de Libras VLibras');
-
-      const vwDiv = document.createElement('div');
-      vwDiv.setAttribute('vw', '');
-      vwDiv.className = 'enabled';
-
-      const accessButton = document.createElement('div');
-      accessButton.setAttribute('vw-access-button', '');
-      accessButton.className = 'active';
-      accessButton.setAttribute('role', 'button');
-      accessButton.setAttribute('tabindex', '0');
-      accessButton.setAttribute('aria-label', 'Ativar tradutor de Libras');
-
-      const pluginWrapper = document.createElement('div');
-      pluginWrapper.setAttribute('vw-plugin-wrapper', '');
-
-      const topWrapper = document.createElement('div');
-      topWrapper.className = 'vw-plugin-top-wrapper';
-
-      pluginWrapper.appendChild(topWrapper);
-      vwDiv.appendChild(accessButton);
-      vwDiv.appendChild(pluginWrapper);
-      container.appendChild(vwDiv);
-      document.body.appendChild(container);
-    }
-
-    container.style.display = 'block';
-
-    // Load script if not loaded
-    if (!document.getElementById('vlibras-script')) {
-      const script = document.createElement('script');
-      script.id = 'vlibras-script';
-      script.src = 'https://vlibras.gov.br/app/vlibras-plugin.js';
-      script.async = true;
-      script.type = 'text/javascript';
-
-      script.onload = () => {
-        const checkVLibras = setInterval(() => {
-          // @ts-ignore
-          if (window.VLibras && window.VLibras.Widget) {
-            clearInterval(checkVLibras);
-            try {
-              // @ts-ignore
-              new window.VLibras.Widget('https://vlibras.gov.br/app');
-              setVlibrasReady(true);
-            } catch (error) {
-              console.error('Erro ao inicializar VLibras:', error);
-            }
-          }
-        }, 100);
-
-        // Timeout after 5s
-        setTimeout(() => clearInterval(checkVLibras), 5000);
-      };
-
-      script.onerror = () => console.error('Erro ao carregar script VLibras');
-      document.head.appendChild(script);
-    } else {
-      setVlibrasReady(true);
-    }
-  }, []);
-
   const toggleVlibras = useCallback(() => {
+    const container = document.getElementById('vlibras-container');
+    if (!container) return;
+    
     if (vlibrasVisible) {
-      hideVlibras();
+      container.style.display = 'none';
       setVlibrasVisible(false);
     } else {
-      if (!vlibrasReady) {
-        loadAndShowVlibras();
-      } else {
-        showVlibras();
-      }
+      container.style.display = 'block';
       setVlibrasVisible(true);
     }
-  }, [vlibrasVisible, vlibrasReady, hideVlibras, showVlibras, loadAndShowVlibras]);
+  }, [vlibrasVisible]);
 
   const handleTTS = () => {
     if (isSpeaking && !isPaused) {
